@@ -1,6 +1,23 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+/*
+    * Tutorial for all the concepts for revision purpose :
+    * https://www.youtube.com/watch?v=NgUYYC6lTws -> fread , fwrite
+*/
+
+/*
+    TODO :  Superblock (Block 0) -> Inodes (Block 1 - Block n) -> Data Blocks (Block n+1 - End) 
+*/
+
+
+typedef enum {
+    OK,
+    NOT_OK,
+}status;
+ 
 
 
 
@@ -28,7 +45,7 @@
 */
 typedef struct
 {
-    uint16_t location_on_the_disk_from_where_os_will_read;
+    int location_on_the_disk_from_where_os_will_read;
     uint16_t size_of_file_in_bytes;
     uint16_t reference_count_of_the_file;
     char name_of_the_file[16];
@@ -55,7 +72,7 @@ typedef struct {
     int number_of_data_block_present;
 } superblock_t;
 
-void format_filesystem(FILE* file)
+status format_filesystem(FILE* file)
 {
 
     // Create a instance of the super block and fill the appropioate content
@@ -67,7 +84,7 @@ void format_filesystem(FILE* file)
     fseek(file, 0, SEEK_SET);
     fwrite(&superblock, sizeof(superblock_t), 1, file);
     inode_t inode = {
-        .location_on_the_disk_from_where_os_will_read = DATA_BLOCK_START,
+        .location_on_the_disk_from_where_os_will_read = -1,
         .size_of_file_in_bytes = 0,
         .reference_count_of_the_file = 0,
         .name_of_the_file = ""
@@ -76,6 +93,7 @@ void format_filesystem(FILE* file)
     for (int i = 0; i < NUM_INODES; i++) {
         fwrite(&inode, sizeof(inode), 1, file);
     }
+    return OK;
 }
 int main(int argc, char const *argv[])
 {
@@ -91,3 +109,59 @@ int main(int argc, char const *argv[])
     }
     return 0;
 }
+/*
+    * Before making a new file we have to check whether we have free inodes or not
+    * if we have free inodes we can create a new file
+    * else we have to delete some file so that corresponding inode will get delete!
+*/
+
+inline int find_free_inode(FILE* file){
+    inode_t base_inode;
+
+    // Move to the start of the inode section (block 1)
+    fseek(file, SECTOR_SIZE, SEEK_SET);
+
+    for(int i = 0; i < NUM_INODES; i++){
+
+        fread(&base_inode, sizeof(inode_t), 1, file);
+        if(base_inode.location_on_the_disk_from_where_os_will_read == -1){
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+status create_file(FILE* file , char* file_name , char* file_content){
+    // first we need to find whether we can create file or not so lets check inode 
+
+    if(find_free_inode(file) == -1){
+        puts("First delete some files then try again");
+        return NOT_OK;
+    }
+
+    inode_t node;
+    // initialize inode for the new file -> gives info about the file
+    strcpy(node.name_of_the_file, file_name);
+    node.size_of_file_in_bytes = strlen(file_content);
+    node.location_on_the_disk_from_where_os_will_read = find_free_inode(file) + DATA_BLOCK_START;
+    // cursor will the specific point and start writing the content
+    // Writing Inode Metadata
+    fseek(file,(find_free_inode(file)*INODE_SIZE)+SECTOR_SIZE,SEEK_SET); 
+    fwrite(&node,sizeof(inode_t),1,file);
+    // Writing Data to data block
+    fseek(file,node.location_on_the_disk_from_where_os_will_read*SECTOR_SIZE,SEEK_SET);
+    fwrite(file_content,sizeof(char),node.size_of_file_in_bytes,file);
+    return OK;  
+}
+
+status read_file(FILE* file , char* file_name){
+
+    inode_t node;
+    fseek(file, SECTOR_SIZE, SEEK_SET);
+    
+
+
+    return OK;
+}
+
