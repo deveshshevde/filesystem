@@ -95,27 +95,14 @@ status format_filesystem(FILE* file)
     }
     return OK;
 }
-int main(int argc, char const *argv[])
-{
 
-    // b is needed to avoid extra character , this thing i read somewhere
-    FILE *file = fopen("x.img", "r+b");
-    if(file == NULL){
-        puts("cant open file");
-    }
-    else{
-        format_filesystem(file);
-        puts("File system formatted successfully");
-    }
-    return 0;
-}
 /*
     * Before making a new file we have to check whether we have free inodes or not
     * if we have free inodes we can create a new file
     * else we have to delete some file so that corresponding inode will get delete!
 */
 
-inline int find_free_inode(FILE* file){
+int find_free_inode(FILE* file){
     inode_t base_inode;
 
     // Move to the start of the inode section (block 1)
@@ -159,9 +146,35 @@ status read_file(FILE* file , char* file_name){
 
     inode_t node;
     fseek(file, SECTOR_SIZE, SEEK_SET);
-    
-
-
+    for(int i = 0; i < NUM_INODES; i++){
+        fread(&node, sizeof(node), 1, file);
+        if(strncmp(node.name_of_the_file, file_name, 16) == 0){
+            // LOL i never thought these things are used here !! great level of confdence after doing this
+            char *data = malloc(node.size_of_file_in_bytes + 1);
+            fseek(file, node.location_on_the_disk_from_where_os_will_read*SECTOR_SIZE, SEEK_SET);
+            fread(data, sizeof(char), node.size_of_file_in_bytes, file);
+            puts(data);
+            free(data);
+            return OK;
+        }
+    }
     return OK;
+}
+
+int main()
+{
+
+    // b is needed to avoid extra character , this thing i read somewhere
+    FILE *file = fopen("x.img", "r+b");
+    if(file == NULL){
+        puts("cant open file");
+    }
+    else{
+        format_filesystem(file);
+        puts("File system formatted successfully");
+    }
+    create_file(file, "file1", "hello world from file1");
+    read_file(file, "file1");
+    return 0;
 }
 
