@@ -10,7 +10,7 @@
 - after this i will try to make inode dynamic just like zfs and may be try to use main args for ease !
 
 * my fs looks something like this
-![alt text](image-1.png)
+![alt text](image.png)
 
 
 
