@@ -1,23 +1,25 @@
-
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11
-TARGET = fs
-SRCS = filesystem.c
+CFLAGS = -Wall -g
 
-OBJS = $(SRCS:.c=.o)
+all: format createfile readfile
 
+format: format.o
+	$(CC) $(CFLAGS) -o format format.o
 
-all: $(TARGET)
+createfile: createfile.o
+	$(CC) $(CFLAGS) -o createfile createfile.o
 
+readfile: readfile.o
+	$(CC) $(CFLAGS) -o readfile readfile.o
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+format.o: format.c
+	$(CC) $(CFLAGS) -c format.c
 
+createfile.o: createfile.c
+	$(CC) $(CFLAGS) -c createfile.c
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
+readfile.o: readfile.c
+	$(CC) $(CFLAGS) -c readfile.c
 
 clean:
-	rm -f $(OBJS) $(TARGET)
-
+	rm -f *.o format createfile readfile

@@ -13,3 +13,13 @@
 ![alt text](image-1.png)
 
 
+
+## Compilation stage :
+
+* use ```make``` to compile and generate binaries
+    - Format the fs :
+    ``` ./format x.img ```
+    - Create new file :
+    ``` ./createfile x.img name "my name is devesh" ```
+    - Read file :
+    ``` ./readfile x.img name```
